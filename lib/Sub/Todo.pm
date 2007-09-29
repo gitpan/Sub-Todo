@@ -4,7 +4,7 @@ use warnings;
 use strict;
 use Carp;
 
-use version; our $VERSION = qv('0.0.1');
+use version; our $VERSION = qv('0.0.2');
 
 use base qw(Exporter);
 our @EXPORT      = qw(todo);
@@ -39,7 +39,7 @@ Sub::Todo - mark subroutines or methods as 'TODO'
 
 =head1 VERSION
 
-This document describes Sub::Todo version 0.0.1
+This document describes Sub::Todo version 0.0.2
 
 =head1 SYNOPSIS
 

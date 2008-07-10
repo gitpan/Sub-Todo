@@ -4,29 +4,43 @@ use warnings;
 use strict;
 use Carp;
 
-use version; our $VERSION = qv('0.0.2');
+use version; our $VERSION = qv('0.0.3');
 
 use base qw(Exporter);
 our @EXPORT      = qw(todo);
-our @EXPORT_OK   = qw(todo_return todo_carp todo_croak);
+our @EXPORT_OK   = qw(todo_return todo_carp todo_croak get_errno_func_not_impl);
 our %EXPORT_TAGS = ( 'all' => [@EXPORT, @EXPORT_OK], 'long' => \@EXPORT_OK );
 
 sub todo {
-	$! = 78, return; 
+	$! = get_errno_func_not_impl(), return; 
 }
 
 sub todo_return {
-	$! = 78, return; 
+	$! = get_errno_func_not_impl(), return; 
 }
 
 sub todo_carp {
 	# $! = 78, warn($!), return;
-	$! = 78, carp("$!"), $! = 78, return; # carp/croak needs the double quotes and double assignment of $!, warn/die does not, weird...
+	$! = get_errno_func_not_impl(), carp("$!"), $! = get_errno_func_not_impl(), return; # carp/croak needs the double quotes and double assignment of $!, warn/die does not, weird...
 }
 
 sub todo_croak {
 	# $! = 78, die($!), return;
-	$! = 78, croak("$!"), $! = 78, return; # still 'return;' just in case they've overidden croak()/handlers with funny things
+	$! = get_errno_func_not_impl(), croak("$!"), $! = get_errno_func_not_impl(), return; # still 'return;' just in case they've overidden croak()/handlers with funny things
+}
+
+sub get_errno_func_not_impl {
+    # we don't want to load POSIX but if its there we want to use it
+    # CONSTANTs are weird when not defined so we have to:
+
+    local  $^W = 0;
+    no warnings;
+    no strict;
+    my $posix = POSIX::ENOSYS;
+    return $posix ne 'POSIX::ENOSYS' ? POSIX::ENOSYS
+                  : $^O =~ /linux/i  ? 38
+                  :                    78
+                  ;
 }
 
 1; 
@@ -39,7 +53,7 @@ Sub::Todo - mark subroutines or methods as 'TODO'
 
 =head1 VERSION
 
-This document describes Sub::Todo version 0.0.2
+This document describes Sub::Todo version 0.0.3
 
 =head1 SYNOPSIS
 
@@ -93,9 +107,28 @@ Same as todo() but it additionally 'carp $!;'
 
 Same as todo() but it additionally 'croak $!;'
 
+=head2 get_errno_func_not_impl()
+
+This is used internally to set $!. 
+
+It should determine the correct value from POSIX if you've used POSIX, based on the OS name, or a semi-safe default.
+
+
 =head1 DIAGNOSTICS
 
 Throws no real errors or warnings of its own. Except todo_carp() and todo_croak() which throw $!
+
+If $! is not 'Function not implemented' please open an rt with this information:
+
+=over 4
+
+=item * The output of this command:
+
+  perl -MPOSIX -le 'print "-$^O-";print "-" . POSIX::ENOSYS . "-"';
+
+=item * Does adding 'use POSIX;' get $! set properly?
+
+=back
 
 =head1 CONFIGURATION AND ENVIRONMENT
 
